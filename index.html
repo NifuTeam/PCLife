@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pc Life</title>
+<meta name="description" content="Pc Life — a psychological horror visual novel from Nifuteam.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   PC LIFE — design tokens
+   Palette: black / night-navy / software-green,
+   built around a single signature: a terminal
+   window "typing" the game's own title.
+   ============================================ */
+:root {
+  --black: #04060a;
+  --navy-1: #060b16;
+  --navy-2: #0b1424;
+  --navy-3: #101b2e;
+  --panel: rgba(14, 22, 38, 0.82);
+  --border: rgba(61, 220, 132, 0.16);
+
+  --green: #3ddc84;
+  --green-bright: #6dffb0;
+  --green-dim: #1f6f45;
+  --blue: #3b82f6;
+  --danger: #ff4d5e;
+
+  --text: #dfe8e4;
+  --muted: #8291a3;
+  --muted-2: #556072;
+
+  --white-bg: #f4f6f8;
+  --white-panel: #ffffff;
+  --ink: #141b22;
+  --ink-muted: #4b5764;
+
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Inter', sans-serif;
+
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--black);
+}
+
+h1, h2, h3 { font-family: var(--font-mono); margin: 0; }
+a { color: inherit; }
+button { font-family: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--green-bright);
+  outline-offset: 2px;
+}
+
+/* ============ NAV ============ */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 300;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.nav-logo {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--green-bright);
+  letter-spacing: -0.01em;
+}
+.nav-logo::before {
+  content: "> ";
+  color: var(--muted-2);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-link-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  white-space: nowrap;
+}
+.nav-link-btn:hover, .nav-link-btn:focus-visible {
+  border-color: var(--green);
+  color: var(--green-bright);
+  background: rgba(61, 220, 132, 0.06);
+}
+
+.settings-wrap { position: relative; }
+
+.settings-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.3s ease;
+}
+.settings-btn:hover, .settings-btn:focus-visible {
+  border-color: var(--green);
+  color: var(--green-bright);
+}
+.settings-btn.open { transform: rotate(45deg); }
+
+.settings-panel {
+  position: absolute;
+  top: 46px; right: 0;
+  background: var(--navy-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  min-width: 180px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.settings-panel.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.settings-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  margin-bottom: 8px;
+}
+.lang-row { display: flex; gap: 8px; }
+.lang-btn {
+  flex: 1;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 8px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.lang-btn.active {
+  background: var(--green);
+  color: #06170f;
+  border-color: var(--green);
+}
+.lang-btn:hover:not(.active), .lang-btn:focus-visible:not(.active) {
+  border-color: var(--green);
+  color: var(--green-bright);
+}
+
+/* ============ HOME VIEW ============ */
+.view { display: none; }
+.view.active { display: block; }
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 130px 24px 70px;
+  background:
+    radial-gradient(ellipse 900px 500px at 50% 0%, rgba(61, 220, 132, 0.08), transparent 60%),
+    linear-gradient(180deg, var(--black) 0%, var(--navy-1) 55%, var(--navy-2) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255,255,255,0.012) 0px,
+    rgba(255,255,255,0.012) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.warning-banner {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--danger);
+  border: 1px solid rgba(255, 77, 94, 0.35);
+  background: rgba(255, 77, 94, 0.08);
+  padding: 8px 18px;
+  border-radius: 999px;
+  margin: 0 0 34px;
+  position: relative;
+  z-index: 1;
+  animation: pulse-warn 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse-warn {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 77, 94, 0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 77, 94, 0); }
+}
+
+/* Terminal window — the signature element */
+.terminal {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 90vw);
+  background: rgba(9, 14, 24, 0.9);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 30px 70px rgba(0,0,0,0.55), 0 0 60px rgba(61, 220, 132, 0.06);
+  overflow: hidden;
+  text-align: left;
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot--r { background: #ff5f57; }
+.dot--y { background: #febc2e; }
+.dot--g { background: #28c840; }
+.terminal-path {
+  margin-left: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted-2);
+}
+
+.terminal-body {
+  padding: 28px 26px 32px;
+  font-family: var(--font-mono);
+}
+
+.terminal-line {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+.terminal-line .prompt { color: var(--green); }
+
+.terminal-title {
+  font-size: clamp(2.2rem, 8vw, 3.6rem);
+  font-weight: 700;
+  color: var(--green-bright);
+  text-shadow: 0 0 22px rgba(61, 220, 132, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 3px solid var(--green-bright);
+  width: 0;
+  animation:
+    type-title 1.4s steps(7, end) 0.3s forwards,
+    blink-caret 0.85s step-end infinite;
+}
+
+@keyframes type-title {
+  from { width: 0; }
+  to { width: 7.05ch; }
+}
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--green-bright); }
+}
+
+.tag-row {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 640px;
+  position: relative;
+  z-index: 1;
+}
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #9dc0ff;
+}
+
+.play-btn {
+  margin-top: 34px;
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 15px 46px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(100deg, var(--green-dim), var(--green));
+  color: #06170f;
+  box-shadow: 0 14px 30px rgba(61, 220, 132, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: inline-block;
+  text-decoration: none;
+}
+.play-btn:hover, .play-btn:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(61, 220, 132, 0.35);
+}
+
+.story-block {
+  margin-top: 54px;
+  max-width: 560px;
+  position: relative;
+  z-index: 1;
+}
+.story-line {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+.story-warn {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--danger);
+  margin: 0;
+}
+
+/* ============ BADGE GALLERY (white section) ============ */
+.badges {
+  background: var(--white-bg);
+  color: var(--ink);
+  padding: 70px 24px;
+  text-align: center;
+}
+.badge-grid {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+@media (max-width: 640px) {
+  .badge-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.badge-item {
+  background: var(--white-panel);
+  border: 1px solid rgba(20, 27, 34, 0.08);
+  border-radius: var(--radius);
+  padding: 18px 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.badge-item:hover, .badge-item:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 26px rgba(20, 27, 34, 0.12);
+}
+.badge-item img {
+  width: 56px; height: 56px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+.badge-item span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+}
+
+/* ============ RELEASE INFO + NAV BUTTONS ============ */
+.release {
+  background: var(--navy-2);
+  padding: 70px 24px 90px;
+  text-align: center;
+}
+.release-text {
+  max-width: 520px;
+  margin: 0 auto 32px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--muted);
+}
+.btn-grid {
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+}
+.nav-btn {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 13px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.nav-btn:hover, .nav-btn:focus-visible {
+  border-color: var(--green);
+  color: var(--green-bright);
+  background: rgba(61, 220, 132, 0.06);
+  transform: translateY(-2px);
+}
+
+/* ============ FOOTER ============ */
+.site-footer {
+  background: var(--black);
+  color: var(--muted-2);
+  text-align: center;
+  padding: 46px 24px;
+  border-top: 1px solid var(--border);
+}
+.footer-powered {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.footer-recruit {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  margin: 0;
+}
+.footer-recruit a { color: var(--green); text-decoration: underline; }
+
+/* ============ SUB-PAGES (white) ============ */
+.subpage {
+  min-height: 100vh;
+  background: var(--white-bg);
+  color: var(--ink);
+  padding: 120px 24px 80px;
+}
+.subpage-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0 30px;
+}
+.back-link:hover, .back-link:focus-visible { color: var(--green-dim); }
+
+.subpage h2 {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  margin-bottom: 20px;
+  color: var(--ink);
+}
+.subpage p {
+  font-family: var(--font-body);
+  line-height: 1.65;
+  color: var(--ink-muted);
+  margin: 0 0 16px;
+}
+
+.rule-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rule-list li {
+  font-family: var(--font-body);
+  line-height: 1.55;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border-left: 4px solid var(--muted-2);
+  background: rgba(20, 27, 34, 0.03);
+}
+.rule-list li.rule-free { border-left-color: var(--green-dim); }
+.rule-list li.rule-ask { border-left-color: #d99a2b; }
+.rule-list li.rule-forbidden { border-left-color: var(--danger); }
+
+.wiki-placeholder {
+  border: 1px dashed rgba(20, 27, 34, 0.2);
+  border-radius: var(--radius);
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted-2);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+/* ============ MODAL ============ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 10, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 400;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  padding: 20px;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+.modal {
+  background: var(--navy-3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  max-width: 400px;
+  width: 100%;
+  position: relative;
+  transform: translateY(10px);
+  transition: transform 0.25s ease;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.modal-close:hover, .modal-close:focus-visible { color: var(--green-bright); }
+
+.modal-icon { font-size: 2rem; margin-bottom: 10px; }
+.modal h3 { font-size: 1.3rem; margin-bottom: 10px; color: var(--green-bright); }
+.modal p { font-family: var(--font-body); line-height: 1.5; color: var(--text); margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="nav-inner">
+    <span class="nav-logo">Pc Life</span>
+    <div class="nav-right">
+      <button class="nav-link-btn" id="wikiRecruitBtn" data-i18n="navWikiRecruit">Team Recruitment</button>
+      <div class="settings-wrap">
+        <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+        <div class="settings-panel" id="settingsPanel">
+          <p class="settings-label" data-i18n="langLabel">Language</p>
+          <div class="lang-row">
+            <button class="lang-btn" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="tr">TR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HOME VIEW ============ -->
+<main class="view active" id="view-home">
+
+  <section class="hero">
+    <p class="warning-banner" data-i18n="warningBanner">⚠ Warning: This game contains a 17+ age restriction.</p>
+
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="dot dot--r"></span>
+        <span class="dot dot--y"></span>
+        <span class="dot dot--g"></span>
+        <span class="terminal-path">~/nifuteam/pc_life.exe</span>
+      </div>
+      <div class="terminal-body">
+        <p class="terminal-line"><span class="prompt">&gt;</span> run project.title</p>
+        <h1 class="terminal-title">Pc Life</h1>
+      </div>
+    </div>
+
+    <div class="tag-row">
+      <span class="tag" data-i18n="tagPsych">Psychological Horror</span>
+      <span class="tag" data-i18n="tagMeta">Meta</span>
+      <span class="tag" data-i18n="tagFourthWall">Fourth-Wall Breaking</span>
+      <span class="tag" data-i18n="tagVN">Visual Novel</span>
+      <span class="tag" data-i18n="tagPC">Computer</span>
+      <span class="tag" data-i18n="tagCoding">Coding</span>
+    </div>
+
+    <a href="pclife-blank.html" target="_blank" rel="noopener" class="play-btn" data-i18n="playBtn">Play</a>
+
+    <div class="story-block">
+      <p class="story-line" data-i18n="storyLine1">How about telling the story of your adventures in a simulated world?</p>
+      <p class="story-warn" data-i18n="storyLine2">Warning: this is not an educational-simulation game — it's a psychological horror game!</p>
+    </div>
+  </section>
+
+  <section class="badges">
+    <div class="badge-grid">
+      <button class="badge-item" data-badge="17plus">
+        <img src="https://raw.githubusercontent.com/NifuTeam/PCLife/main/Logos/17%2B.png" alt="17+" loading="lazy">
+        <span>17+</span>
+      </button>
+      <button class="badge-item" data-badge="horror">
+        <img src="https://raw.githubusercontent.com/NifuTeam/PCLife/main/Logos/Horror.png" alt="Horror" loading="lazy">
+        <span data-i18n="badgeHorrorTitle">Horror</span>
+      </button>
+      <button class="badge-item" data-badge="meta">
+        <img src="https://raw.githubusercontent.com/NifuTeam/PCLife/main/Logos/Meta.png" alt="Meta" loading="lazy">
+        <span data-i18n="badgeMetaTitle">Meta</span>
+      </button>
+      <button class="badge-item" data-badge="psych">
+        <img src="https://raw.githubusercontent.com/NifuTeam/PCLife/main/Logos/Psychological%20horror.png" alt="Psychological horror" loading="lazy">
+        <span data-i18n="badgePsychTitle">Psychological Horror</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="release">
+    <p class="release-text" data-i18n="releaseInfo">The game is expected to release in mid-2027 and will be published on itch.io! Click one of the buttons below for more details.</p>
+    <div class="btn-grid">
+      <button class="nav-btn" data-view="telif" data-i18n="btnCopyright">Copyright</button>
+      <a class="nav-btn" href="https://nifuteam.github.io/Nifugames/" target="_blank" rel="noopener" data-i18n="btnNifu">Nifu</a>
+      <button class="nav-btn" data-view="wiki" data-i18n="btnWiki">Wiki</button>
+      <button class="nav-btn" data-view="modding" data-i18n="btnModding">Modding &amp; OCs</button>
+      <button class="nav-btn" data-view="more" data-i18n="btnMore">More</button>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <p class="footer-powered">Powered by Nifuteam</p>
+    <p class="footer-recruit" data-i18n-html="footerRecruit">Contact <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a> for team recruitment!</p>
+  </footer>
+</main>
+
+<!-- ============ TELIF (COPYRIGHT) VIEW ============ -->
+<section class="view subpage" id="view-telif">
+  <div class="subpage-inner">
+    <button class="back-link" data-back="true">← <span data-i18n="backHome">Back to home</span></button>
+    <h2 data-i18n="telifTitle">Copyright</h2>
+    <p data-i18n="telifIntro">Copyright belongs to Nifu. Here's what's free to do, what needs asking, and what's forbidden:</p>
+    <ul class="rule-list">
+      <li class="rule-free" data-i18n="telifFree1">OC design: Free</li>
+      <li class="rule-free" data-i18n="telifFree2">Making fan animations: Free (monetization must be disabled, and you must let us know if it becomes a series!)</li>
+      <li class="rule-free" data-i18n="telifFree3">Modding: Free</li>
+      <li class="rule-ask" data-i18n="telifAsk1">Making a fan game / spin-off series: Ask first!</li>
+      <li class="rule-ask" data-i18n="telifAsk2">Making and selling merchandise: Ask first</li>
+      <li class="rule-forbidden" data-i18n="telifForbidden">Using the game's name, story, characters, etc.: Forbidden</li>
+    </ul>
+    <p data-i18n-html="telifOther">For anything else: <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a></p>
+  </div>
+</section>
+
+<!-- ============ WIKI VIEW (placeholder) ============ -->
+<section class="view subpage" id="view-wiki">
+  <div class="subpage-inner">
+    <button class="back-link" data-back="true">← <span data-i18n="backHome">Back to home</span></button>
+    <h2 data-i18n="wikiTitle">Wiki</h2>
+    <div class="wiki-placeholder" data-i18n="wikiPlaceholder1">[ Text placeholder — fill in later ]</div>
+    <div class="wiki-placeholder" data-i18n="wikiPlaceholder2">[ Image placeholder — fill in later ]</div>
+    <div class="wiki-placeholder" data-i18n="wikiPlaceholder1">[ Text placeholder — fill in later ]</div>
+  </div>
+</section>
+
+<!-- ============ MODDING & OCs VIEW ============ -->
+<section class="view subpage" id="view-modding">
+  <div class="subpage-inner">
+    <button class="back-link" data-back="true">← <span data-i18n="backHome">Back to home</span></button>
+    <h2 data-i18n="moddingTitle">Modding &amp; OCs</h2>
+    <p data-i18n="moddingBody">Modding is free, and so are OCs — but doing either for profit is forbidden, copyright still applies. For modding done in a language other than Ren'Py/Python, get in touch first.</p>
+    <p data-i18n-html="moddingContact">Contact: <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a></p>
+  </div>
+</section>
+
+<!-- ============ MORE VIEW (placeholder) ============ -->
+<section class="view subpage" id="view-more">
+  <div class="subpage-inner">
+    <button class="back-link" data-back="true">← <span data-i18n="backHome">Back to home</span></button>
+    <h2 data-i18n="moreTitle">More</h2>
+    <p data-i18n="moreBody">More content is coming soon.</p>
+  </div>
+</section>
+
+<!-- ============ MODAL (badges + wiki recruitment) ============ -->
+<div class="modal-overlay" id="infoModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    <div class="modal-icon" id="modalIcon"></div>
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+  </div>
+</div>
+
+<script>
+/* ============================================
+   PC LIFE — i18n + view/modal logic
+   ============================================ */
+
+const i18n = {
+  en: {
+    navWikiRecruit: "Team Recruitment",
+    langLabel: "Language",
+    warningBanner: "⚠ Warning: This game contains a 17+ age restriction.",
+    tagPsych: "Psychological Horror",
+    tagMeta: "Meta",
+    tagFourthWall: "Fourth-Wall Breaking",
+    tagVN: "Visual Novel",
+    tagPC: "Computer",
+    tagCoding: "Coding",
+    playBtn: "Play",
+    storyLine1: "How about telling the story of your adventures in a simulated world?",
+    storyLine2: "Warning: this is not an educational-simulation game — it's a psychological horror game!",
+    badgeHorrorTitle: "Horror",
+    badgeMetaTitle: "Meta",
+    badgePsychTitle: "Psychological Horror",
+    releaseInfo: "The game is expected to release in mid-2027 and will be published on itch.io! Click one of the buttons below for more details.",
+    btnCopyright: "Copyright",
+    btnNifu: "Nifu",
+    btnWiki: "Wiki",
+    btnModding: "Modding & OCs",
+    btnMore: "More",
+    footerRecruitHtml: 'Contact <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a> for team recruitment!',
+    backHome: "Back to home",
+    telifTitle: "Copyright",
+    telifIntro: "Copyright belongs to Nifu. Here's what's free to do, what needs asking, and what's forbidden:",
+    telifFree1: "OC design: Free",
+    telifFree2: "Making fan animations: Free (monetization must be disabled, and you must let us know if it becomes a series!)",
+    telifFree3: "Modding: Free",
+    telifAsk1: "Making a fan game / spin-off series: Ask first!",
+    telifAsk2: "Making and selling merchandise: Ask first",
+    telifForbidden: "Using the game's name, story, characters, etc.: Forbidden",
+    telifOtherHtml: 'For anything else: <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a>',
+    wikiTitle: "Wiki",
+    wikiPlaceholder1: "[ Text placeholder — fill in later ]",
+    wikiPlaceholder2: "[ Image placeholder — fill in later ]",
+    moddingTitle: "Modding & OCs",
+    moddingBody: "Modding is free, and so are OCs — but doing either for profit is forbidden, copyright still applies. For modding done in a language other than Ren'Py/Python, get in touch first.",
+    moddingContactHtml: 'Contact: <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a>',
+    moreTitle: "More",
+    moreBody: "More content is coming soon.",
+    badges: {
+      "17plus": { icon: "🔞", title: "17+ Game", body: "Contains a 17+ age restriction!" },
+      horror: { icon: "👻", title: "Horror", body: "Contains horror elements!" },
+      meta: { icon: "📁", title: "Meta", body: "Contains meta elements (playing with the game's own files)!" },
+      psych: { icon: "🧠", title: "Psychological Horror", body: "Contains psychological horror elements!" }
+    },
+    recruitTitle: "Team Recruitment",
+    recruitBody: "Want to join our wiki team? Get in touch at nifuteam@gmail.com!"
+  },
+  tr: {
+    navWikiRecruit: "Wiki Ekibe Alım",
+    langLabel: "Dil",
+    warningBanner: "⚠ Dikkat: Bu oyun 17 yaş sınırı barındırır.",
+    tagPsych: "Psikolojik Korku",
+    tagMeta: "Meta",
+    tagFourthWall: "4. Duvarı Yıkan",
+    tagVN: "Visual Novel",
+    tagPC: "Bilgisayar",
+    tagCoding: "Kodlama",
+    playBtn: "Oyna",
+    storyLine1: "Simülasyon dünyasındaki maceralarını anlatmaya ne dersin?",
+    storyLine2: "Dikkat: bu bir eğitimsel-simülasyon oyunu değildir, bir psikolojik korku oyunudur!",
+    badgeHorrorTitle: "Korku",
+    badgeMetaTitle: "Meta",
+    badgePsychTitle: "Psikolojik Korku",
+    releaseInfo: "Oyun tahminen 2027 yılının ortalarında çıkacak ve itch.io'da yayınlanacaktır! Ayrıntılı bilgi için aşağıdaki butonlardan birine tıklayın.",
+    btnCopyright: "Telif",
+    btnNifu: "Nifu",
+    btnWiki: "Wiki",
+    btnModding: "Modlama ve OC'ler",
+    btnMore: "Dahası",
+    footerRecruitHtml: 'Ekibe alım için <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a> ile iletişime geçiniz!',
+    backHome: "Ana sayfaya dön",
+    telifTitle: "Telif Hakkı",
+    telifIntro: "Telif hakları Nifu'ya aittir. Aşağıda yapımı serbest olan, sorulması gereken ve yasak olanlar var:",
+    telifFree1: "Oc tasarımı: Serbest",
+    telifFree2: "Fan animasyon yapmak: Serbest (Para kazanımı kapatılmalı ve seri haline gelecek ise haber verilmeli!)",
+    telifFree3: "Modlama: Serbest",
+    telifAsk1: "Fan oyun/ek seri yapmak: Sorulması gerek!",
+    telifAsk2: "Ürün yapılıp satılması: Sorulması gerek",
+    telifForbidden: "Oyun adını, hikayesini ve karakterlerini vb. kullanmak: Yasak",
+    telifOtherHtml: 'Diğerleri için: <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a>',
+    wikiTitle: "Wiki",
+    wikiPlaceholder1: "[ Yazı yer tutucusu — sonra doldurulacak ]",
+    wikiPlaceholder2: "[ Görsel yer tutucusu — sonra doldurulacak ]",
+    moddingTitle: "Modlama ve OC'ler",
+    moddingBody: "Modlama yapmak serbesttir, OC'de serbesttir, lakin kâr amacı gütmek yasaktır, telifi vardır. Ren'py/Python dışı dil kullanarak yapılan modlamalar için önce iletişime geçin.",
+    moddingContactHtml: 'İletişim: <a href="mailto:nifuteam@gmail.com">nifuteam@gmail.com</a>',
+    moreTitle: "Dahası",
+    moreBody: "Daha fazla içerik yakında eklenecek.",
+    badges: {
+      "17plus": { icon: "🔞", title: "17+ Oyun", body: "17 yaş sınırı içerir!" },
+      horror: { icon: "👻", title: "Korku", body: "Korku öğeleri içerir!" },
+      meta: { icon: "📁", title: "Meta", body: "Meta (oyun dosyaları ile oynama) unsurları içerir!" },
+      psych: { icon: "🧠", title: "Psikolojik Korku", body: "Psikolojik korku unsurları içerir!" }
+    },
+    recruitTitle: "Wiki Ekibe Alım",
+    recruitBody: "Wiki ekibimize katılmak ister misin? nifuteam@gmail.com adresinden iletişime geç!"
+  }
+};
+
+let currentLang = "en";
+try {
+  const saved = localStorage.getItem("pclife_lang");
+  if (saved === "en" || saved === "tr") currentLang = saved;
+} catch (e) {}
+
+function applyLang(lang) {
+  currentLang = lang;
+  try { localStorage.setItem("pclife_lang", lang); } catch (e) {}
+
+  document.getElementById("htmlRoot").lang = lang;
+  const dict = i18n[lang];
+
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (dict[key] !== undefined) el.textContent = dict[key];
+  });
+
+  document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-html") + "Html";
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.lang === lang);
+  });
+}
+
+// Settings panel toggle
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsPanel = document.getElementById("settingsPanel");
+settingsBtn.addEventListener("click", () => {
+  const isOpen = settingsPanel.classList.toggle("open");
+  settingsBtn.classList.toggle("open", isOpen);
+});
+document.addEventListener("click", (e) => {
+  if (!settingsPanel.contains(e.target) && e.target !== settingsBtn && settingsPanel.classList.contains("open")) {
+    settingsPanel.classList.remove("open");
+    settingsBtn.classList.remove("open");
+  }
+});
+document.querySelectorAll(".lang-btn").forEach((btn) => {
+  btn.addEventListener("click", () => applyLang(btn.dataset.lang));
+});
+
+// View switching
+function showView(id) {
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  const target = document.getElementById("view-" + id);
+  if (target) {
+    target.classList.add("active");
+    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  }
+}
+document.querySelectorAll("[data-view]").forEach((btn) => {
+  btn.addEventListener("click", () => showView(btn.dataset.view));
+});
+document.querySelectorAll("[data-back]").forEach((btn) => {
+  btn.addEventListener("click", () => showView("home"));
+});
+
+// Badge + recruitment modal
+const infoModal = document.getElementById("infoModal");
+const modalClose = document.getElementById("modalClose");
+const modalIcon = document.getElementById("modalIcon");
+const modalTitle = document.getElementById("modalTitle");
+const modalBody = document.getElementById("modalBody");
+let lastFocused = null;
+
+function openModal(icon, title, body) {
+  lastFocused = document.activeElement;
+  modalIcon.textContent = icon;
+  modalTitle.textContent = title;
+  modalBody.textContent = body;
+  infoModal.classList.add("open");
+  infoModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  modalClose.focus();
+}
+function closeModal() {
+  infoModal.classList.remove("open");
+  infoModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  if (lastFocused) lastFocused.focus();
+}
+
+document.querySelectorAll("[data-badge]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const info = i18n[currentLang].badges[btn.dataset.badge];
+    if (info) openModal(info.icon, info.title, info.body);
+  });
+});
+
+document.getElementById("wikiRecruitBtn").addEventListener("click", () => {
+  const dict = i18n[currentLang];
+  openModal("📖", dict.recruitTitle, dict.recruitBody);
+});
+
+modalClose.addEventListener("click", closeModal);
+infoModal.addEventListener("click", (e) => { if (e.target === infoModal) closeModal(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && infoModal.classList.contains("open")) closeModal();
+});
+
+// Init
+applyLang(currentLang);
+</script>
+</body>
+</html>
