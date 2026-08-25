@@ -1,4 +1,4 @@
-# PCLife / Personality Computer Life
+# PCLife / Personal Computer Life
 
 EN: WARNING: DO NOT READ BEFORE PLAYING THE GAME!
 
